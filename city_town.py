@@ -61,9 +61,10 @@ if __name__ == '__main__':
                 lst.append(dict_t)
 
     df = pd.DataFrame(lst)
-    df["province2"] = list(map(lambda x: re.sub(r"省|市|自治区|特别行政区", "",  x), df["province"]))
-    df["city2"] = list(map(lambda x: re.sub(r"市|城区", "", x), df["city"]))
-    df["town2"] = list(map(lambda x: re.sub(r"市|县|镇|区", "", x), df["town"]))
+    df["province2"] = list(map(lambda x: re.sub(r"省|市|回族自治区|壮族自治区|维吾尔自治区|自治区|特别行政区", "", x), df["province"]))
+    df["city2"] = list(map(lambda x: re.sub(r"市|城区|自治州|自治县", "", x), df["city"]))
+    df["town2"] = list(map(lambda x: re.sub(r"新区|区|市|自治县|县|镇|", "", x), df["town"]))  # 注意会出现单个字符串
+    # df.to_excel("chinatwon.xlsx")
     # s = set([x[-1] for x in df['city']])
     df["qu"] = None
     for i in range(len(df)):
@@ -75,7 +76,7 @@ if __name__ == '__main__':
             df["qu"][i] = "华中地区"
         elif df["province2"][i] in ["北京", "天津", "河北", "山西", "内蒙古"]:
             df["qu"][i] = "华北地区"
-        elif df["province2"][i] in ["宁夏", "新疆维吾尔", "青海", "陕西", "甘肃"]:
+        elif df["province2"][i] in ["宁夏", "新疆", "青海", "陕西", "甘肃"]:
             df["qu"][i] = "西北地区"
         elif df["province2"][i] in ["四川", "云南", "贵州", "西藏", "重庆"]:
             df["qu"][i] = "西南地区"
@@ -83,5 +84,21 @@ if __name__ == '__main__':
             df["qu"][i] = "东北地区"
         elif df["province2"][i] in ["台湾", "香港", "澳门"]:
             df["qu"][i] = "港澳台地区"
-    print(df)
-    print(df[df["qu"] == None])
+
+    p1 = df[["province", "qu"]]
+    p2 = df[["province2", "qu"]]
+    p2.rename(columns={"province2": "province"}, inplace=True)
+    prov_df = pd.concat([p1, p2]).drop_duplicates()
+
+    c1 = df[["city", "qu"]]
+    c2 = df[["city2", "qu"]]
+    c2.rename(columns={"city2": "city"}, inplace=True)
+    city_df = pd.concat([c1, c2]).drop_duplicates()
+
+    t1 = df[["town", "qu"]]
+    t2 = df[["town2", "qu"]]
+    t2 = t2[t2["town2"].map(len) > 1]  # 筛选出该列中长度大于1的值
+    t2.rename(columns={"town2": "town"}, inplace=True)
+    town_df = pd.concat([t1, t2]).drop_duplicates()
+
+    print(town_df)
