@@ -47,15 +47,25 @@ def prov_city_town():
                 "澳门特别行政区"]
     filepath = r'http://restapi.amap.com/v3/config/district?parameters'
     lst = []
-    for prov in province:
-        r = requests.get(filepath, params={"key": "737269e88323592ea805bb6f6f4176db"
-            , "keywords": prov
-            , "subdistrict": 2
-            , "output": "JSON"
-            , "ie": "utf-8"})
-
-        for i in r.json()["districts"][0]["districts"]:
-            prov = r.json()["districts"][0]["name"]
+    r_lst = []
+    if False:
+        with open("raw_json_2.json", "w", encoding="utf-8") as f:
+            for prov in province:
+                r = requests.get(filepath, params={"key": "737269e88323592ea805bb6f6f4176db"
+                    , "keywords": prov
+                    , "subdistrict": 2
+                    , "output": "JSON"
+                    , "ie": "utf-8"})
+                f.write(json.dumps(r.json(), ensure_ascii=False) + "\n")
+                r_lst.append(r.json())
+    if True:
+        with open("raw_json_2.json", "r", encoding="utf-8") as f:
+            for line in f.readlines():
+                r = json.loads(line)
+                r_lst.append(r)
+    for r in r_lst:
+        for i in r["districts"][0]["districts"]:
+            prov = r["districts"][0]["name"]
             city = i["name"]
             for j in i["districts"]:
                 town = j["name"]
@@ -63,10 +73,16 @@ def prov_city_town():
                 lst.append(dict_t)
 
     df = pd.DataFrame(lst)
+    print(df["province"].unique())
+
     df["province2"] = list(map(lambda x: re.sub(r"省|市|回族自治区|壮族自治区|维吾尔自治区|自治区|特别行政区", "", x), df["province"]))
     df["city2"] = list(map(lambda x: re.sub(r"市|城区|自治州|自治县", "", x), df["city"]))
     df["town2"] = list(map(lambda x: re.sub(r"新区|区|市|自治县|县|镇|", "", x), df["town"]))  # 注意会出现单个字符串
     df["qu"] = None
+
+    print(df["province2"].unique())
+    exit()
+
     for i in range(len(df)):
         if df["province2"][i] in ["山东", "江苏", "安徽", "江西", "浙江", "福建", "上海"]:
             df["qu"][i] = "华东地区"
@@ -145,7 +161,7 @@ def read_hive():
 
 
 if __name__ == '__main__':
-
-    print(read_hive())
+    prov_city_town()
+    # print(read_hive())
 
 
